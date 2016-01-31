@@ -28,6 +28,16 @@ type Option struct {
 	long         string
 	defaultValue string
 	action       OptionAction
+	narg         string
+	required     bool
+}
+
+func NewOption(name string) *Option {
+	option := new(Option)
+	option.name = name
+	option.defaultValue = ""
+	option.required = false
+	return option
 }
 
 // String string
@@ -68,5 +78,17 @@ func (o *Option) Default(defaultValue string) *Option {
 // Action default
 func (o *Option) Action(action OptionAction) *Option {
 	o.action = action
+	return o
+}
+
+// NArg default
+func (o *Option) NArg(narg string) *Option {
+	o.narg = narg
+	return o
+}
+
+// Required required
+func (o *Option) Required() *Option {
+	o.required = true
 	return o
 }

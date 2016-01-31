@@ -59,6 +59,8 @@ func (a *Args) Save(name string, optionType ArgumentType, value string) {
 			argument = new(StringArg)
 		case ARG_STRING_LIST:
 			argument = new(StringListArg)
+		case ARG_ARGS:
+			argument = new(StringListArg)
 		default:
 			log.Printf("! ERROR\n")
 		}
@@ -69,7 +71,7 @@ func (a *Args) Save(name string, optionType ArgumentType, value string) {
 	switch optionType {
 	case ARG_FLAG, ARG_STRING:
 		argument.Set(value)
-	case ARG_STRING_LIST:
+	case ARG_STRING_LIST, ARG_ARGS:
 		argument.Add(value)
 	default:
 		log.Printf("! ERROR %v %v = %v\n", optionType, name, value)

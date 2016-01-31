@@ -8,6 +8,7 @@ const (
 	ARG_STRING      ArgumentType = "ARG_STRING"
 	ARG_STRING_LIST ArgumentType = "ARG_STRING_LIST"
 	ARG_FLAG        ArgumentType = "ARG_FLAG"
+	ARG_ARGS        ArgumentType = "ARG_ARGS"
 )
 
 type Argument interface {

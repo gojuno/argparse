@@ -114,8 +114,30 @@ func TestParserFlagOptions(t *testing.T) {
 	if a := args.Arg("f3"); a != true {
 		t.Errorf("arg 'f3' error. Expected [true], got [%v]", a)
 	}
-	if a := args.Arg("f4"); a != true {
-		t.Errorf("arg 'f4' error. Expected [true], got [%v]", a)
+	if a := args.Arg("f4"); a != false {
+		t.Errorf("arg 'f4' error. Expected [false], got [%v]", a)
+	}
+}
+
+func TestParserArg_1(t *testing.T) {
+	// t.Error("Expect logs to contain escaped secret field:\n", logs)
+
+	parser, _ := ArgumentParser()
+
+	parser.AddArg("file").NArg("1")
+	parser.AddArg("files").NArg("+")
+	parser.AddArg("files").NArg("*")
+
+	argv := []string{
+		"file_1.txt",
+		"file_2.txt",
+	}
+	// args := parser.ParseArgs()
+	args := NewArgs()
+
+	if err := parser.parse(argv, args); err != nil {
+		t.Error("Parse error:\n", argv, err)
+		t.SkipNow()
 	}
 }
 
@@ -158,4 +180,17 @@ func TestParserOptions(t *testing.T) {
 		t.Error("Parse error:\n", argv, err)
 		t.SkipNow()
 	}
+}
+
+func TestParserEnv(t *testing.T) {
+	// t.Error("Expect logs to contain escaped secret field:\n", logs)
+
+	parser, _ := ArgumentParser()
+	parser.AddEnv("ENV_STR_A")
+	parser.AddEnv("ENV_STR_B").Default("default")
+	parser.AddEnv("ENV_STR_C").Required()
+
+	// parser.Init()
+	// env := parser.initEnvironment()
+	// t.Error(env.Help())
 }
