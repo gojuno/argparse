@@ -72,6 +72,7 @@ func (o *Option) Long() string {
 // Default default
 func (o *Option) Default(defaultValue string) *Option {
 	o.defaultValue = defaultValue
+	o.required = false
 	return o
 }
 
@@ -84,6 +85,12 @@ func (o *Option) Action(action OptionAction) *Option {
 // NArg default
 func (o *Option) NArg(narg string) *Option {
 	o.narg = narg
+	switch narg {
+	case "1", "+":
+		o.required = true
+	case "*":
+		o.required = false
+	}
 	return o
 }
 

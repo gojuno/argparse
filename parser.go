@@ -47,7 +47,7 @@ func (p *Parser) Dump() {
 
 func (p *Parser) Check(data string) (*Option, string) {
 	// var option *Option
-	// log.Printf("%v", p.String())
+	// fmt.Printf("%v %v", p, data)
 	if !p.optionsProcessed {
 		if strings.HasPrefix(data, "--") { // --arg | --arg value | --arg=value
 			argData := data[2:]
@@ -101,7 +101,12 @@ func (p *Parser) AddOption(optionType ArgumentType, name string, short string, l
 
 // AddArg add option
 func (p *Parser) AddArg(name string) *Option {
-	return p.AddOption(ARG_ARGS, name, "", "").NArg("1")
+	option := NewOption(name)
+	option.optionType = ARG_ARGS
+
+	p.options[name] = option
+	p.args = append(p.args, option)
+	return option
 }
 
 // AddStringOption add option

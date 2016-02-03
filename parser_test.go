@@ -125,7 +125,7 @@ func TestParserArg_1(t *testing.T) {
 	parser, _ := ArgumentParser()
 
 	parser.AddArg("file").NArg("1")
-	parser.AddArg("files").NArg("+")
+	parser.AddArg("files_plus").NArg("+")
 	parser.AddArg("files").NArg("*")
 
 	argv := []string{
