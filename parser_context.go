@@ -10,25 +10,22 @@ const (
 
 // CmdArgvParserContext commandline arguments parser
 type ParserContext struct {
-	rawArgv []string
-	iter    int
+	argv []string
+	iter int
 }
 
 func NewParserContext(argv []string) *ParserContext {
 	pc := new(ParserContext)
+	pc.argv = argv
 	pc.iter = -1
-	pc.rawArgv = []string{}
-	for _, d := range argv {
-		pc.rawArgv = append(pc.rawArgv, d)
-	}
 	return pc
 }
 
-// Next get string value
+// Next extract next string value from input stream
 func (pc *ParserContext) Next() (string, error) {
-	if pc.iter == len(pc.rawArgv)-1 {
+	if pc.iter == len(pc.argv)-1 {
 		return "", errors.New(EOF)
 	}
 	pc.iter++
-	return pc.rawArgv[pc.iter], nil
+	return pc.argv[pc.iter], nil
 }

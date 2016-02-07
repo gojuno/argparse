@@ -4,39 +4,44 @@ import (
 	"bytes"
 	"fmt"
 	"log"
-	"os"
-	"strings"
+	// "strings"
 )
 
 // Parser commandline arguments parser
 type Parser struct {
-	options    map[string]*Option
-	shortNames map[string]*Option
-	longNames  map[string]*Option
-
-	context *ParserContext
-
-	optionsProcessed bool
-	args             []*Option
-	argsIdx          int
+	items          map[string]CliItemType
+	options        map[string]*CliItem
+	arguments      []*CliItem
+	unknownArgvLen bool
 }
 
 // InitParser parser
 func ArgumentParser() (*Parser, error) {
 	p := new(Parser)
-	p.optionsProcessed = false
-	p.args = []*Option{}
-	p.argsIdx = -1
-	p.options = map[string]*Option{}
-	p.shortNames = map[string]*Option{}
-	p.longNames = map[string]*Option{}
+	p.items = map[string]CliItemType{}
+	p.options = map[string]*CliItem{}
+	p.arguments = []*CliItem{}
+	p.unknownArgvLen = false
 	return p, nil
+}
+
+func Init(items []*CliItem) (*Parser, error) {
+	p := new(Parser)
+	p.items = map[string]CliItemType{}
+	p.options = map[string]*CliItem{}
+	p.arguments = []*CliItem{}
+	p.unknownArgvLen = false
+	err := p.Init(items)
+	return p, err
 }
 
 func (p *Parser) String() string {
 	buffer := bytes.NewBuffer([]byte{})
-	for name, option := range p.options {
-		fmt.Fprintf(buffer, "%v=%v\n", name, option)
+	for _, option := range p.options {
+		fmt.Fprintf(buffer, "%v=%v\n", option.Name(), option)
+	}
+	for _, arg := range p.arguments {
+		fmt.Fprintf(buffer, "%v=%v\n", arg.Name(), arg)
 	}
 	return buffer.String()
 }
@@ -45,8 +50,75 @@ func (p *Parser) Dump() {
 	log.Printf("%v", p.String())
 }
 
-func (p *Parser) Check(data string) (*Option, string) {
-	// var option *Option
+func Option(name string) *CliItem {
+	return NewCliItem(name, OPTION)
+}
+
+func Argument(name string) *CliItem {
+	return NewCliItem(name, ARGUMENT)
+}
+
+// AddOption add option
+func (p *Parser) Add(ci *CliItem) error {
+	_, ok := p.items[ci.Name()]
+	if ok {
+		return fmt.Errorf("duplicate item [%s] defenition", ci.Name())
+	}
+	switch ci.Type() {
+	case ARGUMENT:
+		if p.unknownArgvLen {
+			return fmt.Errorf("unknown argument [%v] values count", ci.Name())
+		}
+		switch ci.Param(NARG).Str() {
+		case "1":
+		case "*", "+":
+			p.unknownArgvLen = true
+		}
+		p.arguments = append(p.arguments, ci)
+	case OPTION:
+		p.options[ci.Name()] = ci
+	default:
+		return fmt.Errorf("not implemented type [%s]", ci.Type())
+	}
+
+	p.items[ci.Name()] = ci.Type()
+	return nil
+}
+
+// InitParser parser
+func (p *Parser) Init(items []*CliItem) error {
+	for _, ci := range items {
+		if err := p.Add(ci); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+/*
+// AddStringCliItem add option
+func (p *Parser) AddStringCliItem(name string, short string, long string) *CliItem {
+	return p.AddCliItem(ARG_STRING, name)
+}
+
+// AddStringListCliItem add option
+func (p *Parser) AddStringListCliItem(name string, short string, long string) *CliItem {
+	return p.AddCliItem(ARG_STRING_LIST, name, short, long)
+}
+
+// AddFlagCliItem add option
+func (p *Parser) AddFlagCliItem(name string, short string, long string) *CliItem {
+	return p.AddCliItem(ARG_FLAG, name, short, long).Default("false").Action(SET_TRUE)
+}
+
+func (p *Parser) AddEnv(name string) *CliItem {
+	option := NewCliItem(name)
+	p.options[name] = option
+	return option
+}
+
+func (p *Parser) Check(data string) (*CliItem, string) {
+	// var option *CliItem
 	// fmt.Printf("%v %v", p, data)
 	if !p.optionsProcessed {
 		if strings.HasPrefix(data, "--") { // --arg | --arg value | --arg=value
@@ -82,54 +154,6 @@ func (p *Parser) Check(data string) (*Option, string) {
 	return nil, ""
 }
 
-// AddOption add option
-func (p *Parser) AddOption(optionType ArgumentType, name string, short string, long string) *Option {
-	option := NewOption(name)
-	option.short = short
-	option.long = long
-	option.optionType = optionType
-
-	p.options[name] = option
-	if short != "" {
-		p.shortNames[short] = option
-	}
-	if long != "" {
-		p.longNames[long] = option
-	}
-	return option
-}
-
-// AddArg add option
-func (p *Parser) AddArg(name string) *Option {
-	option := NewOption(name)
-	option.optionType = ARG_ARGS
-
-	p.options[name] = option
-	p.args = append(p.args, option)
-	return option
-}
-
-// AddStringOption add option
-func (p *Parser) AddStringOption(name string, short string, long string) *Option {
-	return p.AddOption(ARG_STRING, name, short, long)
-}
-
-// AddStringListOption add option
-func (p *Parser) AddStringListOption(name string, short string, long string) *Option {
-	return p.AddOption(ARG_STRING_LIST, name, short, long)
-}
-
-// AddFlagOption add option
-func (p *Parser) AddFlagOption(name string, short string, long string) *Option {
-	return p.AddOption(ARG_FLAG, name, short, long).Default("false").Action(SET_TRUE)
-}
-
-func (p *Parser) AddEnv(name string) *Option {
-	option := NewOption(name)
-	p.options[name] = option
-	return option
-}
-
 func (p *Parser) Parse() *Args {
 	args := NewArgs()
 	if err := p.parse(os.Args[1:], args); err != nil {
@@ -157,75 +181,90 @@ func (p *Parser) checkRequired(args *Args) error {
 	}
 	return nil
 }
+*/
+func (p *Parser) parse(argv []string, ctx *ParserContext) error {
 
-func (p *Parser) parse(argv []string, args *Args) error {
-	p.initDefaults(args)
+	longName := map[string]*CliItem{}
+	shortName := map[string]*CliItem{}
+	//argsIter := -1
 
-	p.context = NewParserContext(argv)
-	value, err := p.context.Next()
-	for err == nil {
-		o, v := p.Check(value)
-		if o == nil {
-			return fmt.Errorf("Unknown argument [%s]", value)
+	for _, item := range p.options {
+		if short := item.Param(SHORT).Str(); short != "" {
+			shortName[short] = item
 		}
-		//log.Printf("! [%v] checked as %v\n", value, o)
-
-		switch o.optionType {
-		case ARG_FLAG:
-			switch o.action {
-			case SET_TRUE:
-				value = "true"
-			case SET_FALSE:
-				value = "false"
-			default:
-				value = o.defaultValue
-			}
-		case ARG_STRING, ARG_STRING_LIST:
-			if v != "" {
-				value = v
-			} else {
-				value, err = p.context.Next()
-				if err != nil {
-					return fmt.Errorf("Argument [%s] value required", o)
-				}
-			}
-		case ARG_ARGS:
-			switch o.narg {
-			case "1":
-				value, err = p.context.Next()
-			case "+":
-				for err == nil {
-					value, err = p.context.Next()
-				}
-			case "*":
-				for {
-					value, err = p.context.Next()
-				}
-			default:
-				return fmt.Errorf("Incorrect narg %v", o)
-			}
+		if long := item.Param(LONG).Str(); long != "" {
+			longName[long] = item
 		}
-
-		args.Save(o.name, o.optionType, value)
-
-		value, err = p.context.Next()
 	}
-	if err.Error() != EOF {
-		return err
-	}
-	return p.checkRequired(args)
+
+	// p.initDefaults(args)
+
+	// p.context = NewParserContext(argv)
+	// value, err := p.context.Next()
+	// for err == nil {
+	// 	o, v := p.Check(value)
+	// 	if o == nil {
+	// 		return fmt.Errorf("Unknown argument [%s]", value)
+	// 	}
+	// 	//log.Printf("! [%v] checked as %v\n", value, o)
+
+	// 	switch o.optionType {
+	// 	case ARG_FLAG:
+	// 		switch o.action {
+	// 		case SET_TRUE:
+	// 			value = "true"
+	// 		case SET_FALSE:
+	// 			value = "false"
+	// 		default:
+	// 			value = o.defaultValue
+	// 		}
+	// 	case ARG_STRING, ARG_STRING_LIST:
+	// 		if v != "" {
+	// 			value = v
+	// 		} else {
+	// 			value, err = p.context.Next()
+	// 			if err != nil {
+	// 				return fmt.Errorf("Argument [%s] value required", o)
+	// 			}
+	// 		}
+	// 	case ARG_ARGS:
+	// 		switch o.narg {
+	// 		case "1":
+	// 			value, err = p.context.Next()
+	// 		case "+":
+	// 			for err == nil {
+	// 				value, err = p.context.Next()
+	// 			}
+	// 		case "*":
+	// 			for {
+	// 				value, err = p.context.Next()
+	// 			}
+	// 		default:
+	// 			return fmt.Errorf("Incorrect narg %v", o)
+	// 		}
+	// 	}
+
+	// 	args.Save(o.name, o.optionType, value)
+
+	// 	value, err = p.context.Next()
+	// }
+	// if err.Error() != EOF {
+	// 	return err
+	// }
+	//	return p.checkRequired(args)
+	return nil
 }
 
 /*
 // Parser commandline arguments parser
 type Parser struct {
-	options map[string]*Option
+	options map[string]*CliItem
 }
 
 // InitParser parser
 func EnvParser() (*Parser, error) {
 	p := new(Parser)
-	p.options = map[string]*Option{}
+	p.options = map[string]*CliItem{}
 	return p, nil
 }
 

@@ -2,6 +2,7 @@ package argparse
 
 import ()
 
+/*
 type ArgumentType string
 
 const (
@@ -77,3 +78,4 @@ func (s *FlagArg) Add(value string) {
 func (s *FlagArg) Set(value string) {
 	s.value = value == "true" || value == "True" || value == "1"
 }
+*/

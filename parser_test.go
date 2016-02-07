@@ -6,6 +6,47 @@ import (
 	"testing"
 )
 
+func TestParser(t *testing.T) {
+	p1, err := Init([]*CliItem{
+		Option("s1"),
+		Option("s2"),
+		Option("s3"),
+	})
+	if err != nil {
+		t.Error("Error", p1, err)
+	}
+
+	p2, err := Init([]*CliItem{
+		Option("s1"),
+		Option("s2"),
+		Option("s1"),
+	})
+	if err == nil {
+		t.Error("Error expected", p2, err)
+	}
+
+	p3, err := Init([]*CliItem{
+		Option("s1"),
+		Option("s2"),
+		Argument("f1").NArg("1"),
+		Argument("f2").NArg("+"),
+	})
+	if err != nil {
+		t.Error("Error", p3, err)
+	}
+
+	p4, err := Init([]*CliItem{
+		Option("s1"),
+		Option("s2"),
+		Argument("f1").NArg("*"),
+		Argument("f2").NArg("1"),
+	})
+	if err == nil {
+		t.Error("Error expected", p4, err)
+	}
+}
+
+/*
 func TestParserStringOptions(t *testing.T) {
 	// t.Error("Expect logs to contain escaped secret field:\n", logs)
 
@@ -194,3 +235,4 @@ func TestParserEnv(t *testing.T) {
 	// env := parser.initEnvironment()
 	// t.Error(env.Help())
 }
+*/
